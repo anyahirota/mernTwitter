@@ -1,7 +1,7 @@
 {
   "name": "merntwitter",
   "version": "1.0.0",
-  "description": "learn how to use mern stack",
+  "description": "A Twitter clone built with the MERN stack",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
