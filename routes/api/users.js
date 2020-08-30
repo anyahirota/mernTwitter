@@ -6,6 +6,9 @@ const jwt = require("jsonwebtoken");
 const keys = require("../../config/keys");
 const passport = require("passport");
 
+const validateRegisterInput = require("../../validation/register");
+const validateLoginInput = require("../../validation/login");
+
 router.get("/test", (req, res) => res.json({ msg: "This is the users route" }));
 
 // You may want to start commenting in information about your routes so that you can find the appropriate ones quickly.
@@ -22,6 +25,13 @@ router.get(
 );
 
 router.post("/register", (req, res) => {
+
+    const { errors, isValid } = validateRegisterInput(req.body);
+
+    if (!isValid) {
+    return res.status(400).json(errors);
+    }
+
   // Check to make sure nobody has already registered with a duplicate email
   User.findOne({ email: req.body.email }).then((user) => {
     if (user) {
@@ -66,35 +76,42 @@ router.post("/register", (req, res) => {
 });
 
 router.post("/login", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
 
-  User.findOne({ email }).then((user) => {
-    if (!user) {
-      return res.status(404).json({ email: "This user does not exist" });
+    const { errors, isValid } = validateLoginInput(req.body);
+
+    if (!isValid) {
+      return res.status(400).json(errors);
     }
 
-    bcrypt.compare(password, user.password).then((isMatch) => {
-      if (isMatch) {
-        const payload = { id: user.id, handle: user.handle, email: user.email };
+    const email = req.body.email;
+    const password = req.body.password;
 
-        jwt.sign(
-          payload,
-          keys.secretOrKey,
-          { expiresIn: 3600 },
-          (err, token) => {
-            res.json({
-              success: true,
-              token: "Bearer " + token,
-            });
-          }
-        );
-      } else {
-        errors.password = "Incorrect password";
-        return res.status(400).json(errors);
-      }
+    User.findOne({ email }).then((user) => {
+        if (!user) {
+            return res.status(404).json({ email: "This user does not exist" });
+        }
+
+        bcrypt.compare(password, user.password).then((isMatch) => {
+            if (isMatch) {
+                const payload = { id: user.id, handle: user.handle, email: user.email };
+
+                jwt.sign(
+                    payload,
+                    keys.secretOrKey,
+                    { expiresIn: 3600 },
+                    (err, token) => {
+                        res.json({
+                        success: true,
+                        token: "Bearer " + token,
+                        });
+                    }
+                );
+            } else {
+                errors.password = "Incorrect password";
+                return res.status(400).json(errors);
+            }
+        });
     });
-  });
 });
 
 // router.post("/login", (req, res) => {
